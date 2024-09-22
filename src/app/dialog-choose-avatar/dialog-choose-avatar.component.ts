@@ -33,7 +33,7 @@ export class DialogChooseAvatarComponent {
   constructor(private router: Router, public us: UserService) {}
 
   post = {
-    endPoint: 'https://bubble.ishakates.com/sendSignUp.php',
+    endPoint: 'https://chatapp.kerim-tasci.de/sendSignUp.php',
     body: (payload: any) => JSON.stringify(payload),
     options: {
       headers: {

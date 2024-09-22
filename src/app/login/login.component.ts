@@ -36,7 +36,7 @@ export class LoginComponent implements OnInit {
     status: 'offline',
     avatarUrl: '../../assets/img/unUsedDefault.png',
     userId: '',
-    logIn: 'https://bubble.ishakates.com/',
+    logIn: 'https://chatapp.kerim-tasci.de/',
     usedLastTwoEmojis: ['✅', '🙌'],
     uid: null
   });

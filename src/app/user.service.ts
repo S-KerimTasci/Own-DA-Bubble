@@ -1,7 +1,7 @@
 import { Injectable, inject, OnInit, Component } from '@angular/core';
 import { User } from '../models/user.class';
 import { Firestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc } from '@angular/fire/firestore';
-import { getDocs, query, where } from "firebase/firestore";
+import { DocumentReference, getDocs, query, where } from "firebase/firestore";
 import { HttpClient, HttpRequest, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Channel } from '../models/channel.class';
@@ -151,16 +151,34 @@ export class UserService {
   /**
    * Function for creating and saving a user
    */
-  createAndSaveUser() {
-    this.userCache['uid'] = this.userToken;
-    this.addUser(this.userCache);
-    setTimeout(() => {
-      this.database.getUser(this.userCache.email)
-        .then(user =>{
-          this.database.addConversation(this.database.createConversation(user.userId, user.userId));
-          this.userToken = '';
-        })
-    }, 1000);
+  // createAndSaveUser() {
+  //   this.userCache['uid'] = this.userToken;
+  //   this.addUser(this.userCache);
+  //   setTimeout(() => {
+  //     this.database.getUser(this.userCache.email)
+  //       .then(user =>{
+  //         this.database.addConversation(this.database.createConversation(user.userId, user.userId));
+  //         this.userToken = '';
+  //       })
+  //   }, 1000);
+  // }
+  async createAndSaveUser() {
+    try {
+      const userRef = await this.addUser(this.userCache);
+      const userId = userRef.id;
+      this.userCache.userId = userId;
+      await this.pushUserId(userId);
+      
+      // Create own conversation for the user
+      const conversation = this.database.createConversation(userId, userId);
+      await this.database.addConversation(conversation);
+      
+      this.userToken = '';
+      return this.userCache;
+    } catch (error) {
+      console.error('Error in createAndSaveUser:', error);
+      throw error;
+    }
   }
 
 
@@ -278,12 +296,15 @@ export class UserService {
  * Function for adding a user to the database
  * @param user The user object to be added
  */
-  addUser(user: User) {
-    addDoc(collection(this.firestore, 'users'), user.toJSON())
-    .then((data) => {
-      this.pushUserId(data.id);
-    })
+  // addUser(user: User) {
+    // addDoc(collection(this.firestore, 'users'), user.toJSON())
+    // .then((data) => {
+    //   this.pushUserId(data.id);
+    // })
     // .catch((error) => console.error('Fehler beim Hinzufügen des Benutzers:', error));
+  // }
+  addUser(user: User): Promise<DocumentReference> {
+    return addDoc(collection(this.firestore, 'users'), user.toJSON());
   }
 
 
@@ -293,7 +314,7 @@ export class UserService {
  */
   pushUserId(id: string) {
     const userDocRef = doc(this.firestore, "users", id);
-    updateDoc(userDocRef, {
+    return updateDoc(userDocRef, {
       userId: id
     });
   }
@@ -425,10 +446,10 @@ export class UserService {
     this.isWorkspaceDataLoaded = false;
     this.activeUserConversationList = [];
     this.usersFromActiveUserConversationList = [];
+    
     this.database.getUser(this.loggedUser.email).then(user => {
       this.database.loadAllUserConversations(user.userId)
         .then(userConversations => {
-          
           const promises = userConversations.map(conversation => {
             this.activeUserConversationList.push(conversation);
             const userPromise = conversation.createdBy === user.userId
@@ -447,12 +468,22 @@ export class UserService {
           return Promise.all(promises);
         })
         .then(() => {
-          
-          this.database.loadSpecificUserConversation(this.activeUserObject.userId, this.activeUserOwnConversation.conversationId)
-            .then((conversation => {
-              this.activeUserOwnConversation = conversation
-              this.isWorkspaceDataLoaded = true;
-            }))
+          if (this.activeUserOwnConversation && this.activeUserOwnConversation.conversationId) {
+            return this.database.loadSpecificUserConversation(this.activeUserObject.userId, this.activeUserOwnConversation.conversationId);
+          } else {
+            console.warn('No own conversation found for user');
+            return null;
+          }
+        })
+        .then((conversation) => {
+          if (conversation) {
+            this.activeUserOwnConversation = conversation;
+          }
+          this.isWorkspaceDataLoaded = true;
+        })
+        .catch(error => {
+          console.error('Error in loadActiveUserConversations:', error);
+          this.isWorkspaceDataLoaded = true;
         });
     });
   }

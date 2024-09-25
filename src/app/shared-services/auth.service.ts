@@ -22,10 +22,7 @@ export class AuthService {
   infos: any ;
   
 
-  constructor(private router: Router) {
-    // console.log('googleInfos', this.infos);
-    // console.log('observ', this.activeUser);
-  }
+  constructor(private router: Router) {}
 
 
   /**
@@ -164,11 +161,13 @@ register(email: string, username: string, password: string): Observable<void> {
     .then(response => {
       return updateProfile(response.user, {
         displayName: username,
-        photoURL: this.us.userCache.avatarUrl
-      }).then(() => {
+        photoURL: this.us.userCache?.avatarUrl
+      }).then(async () => {
         this.us.userToken = response.user.uid;
         if (this.us.guest) {
-          this.us.createAndSaveGuest();
+          await this.us.createAndSaveGuest();
+        } else {
+          await this.us.createAndSaveUser(); 
         }
       });
     })
@@ -176,6 +175,7 @@ register(email: string, username: string, password: string): Observable<void> {
       console.error('Error during registration:', error);
       throw error;
     });
+
   return from(promise);
 }
 

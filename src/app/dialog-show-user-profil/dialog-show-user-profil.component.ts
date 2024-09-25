@@ -136,7 +136,7 @@ export class DialogShowUserProfilComponent implements OnInit {
       this.myForm.value.email = usedMail;
       this.us.loggedUser.email = usedMail;
       formData.email = usedMail;
-      console.log(usedMail);
+      //console.log(usedMail);
       
       this.myForm.patchValue({
         email: usedMail,

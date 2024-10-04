@@ -1,6 +1,6 @@
-import { Injectable, inject, OnInit, Component } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { User } from '../models/user.class';
-import { Firestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, updateDoc, doc, onSnapshot } from '@angular/fire/firestore';
 import { DocumentReference, getDocs, query, where } from "firebase/firestore";
 import { HttpClient, HttpRequest, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -9,8 +9,6 @@ import { FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DatabaseService } from './database.service';
 import { Conversation } from '../models/conversation.class';
-import { Auth } from '@angular/fire/auth';
-import { AuthService } from './shared-services/auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -151,19 +149,9 @@ export class UserService {
   /**
    * Function for creating and saving a user
    */
-  // createAndSaveUser() {
-  //   this.userCache['uid'] = this.userToken;
-  //   this.addUser(this.userCache);
-  //   setTimeout(() => {
-  //     this.database.getUser(this.userCache.email)
-  //       .then(user =>{
-  //         this.database.addConversation(this.database.createConversation(user.userId, user.userId));
-  //         this.userToken = '';
-  //       })
-  //   }, 1000);
-  // }
   async createAndSaveUser() {
     try {
+      this.userCache['uid'] = this.userToken;
       const userRef = await this.addUser(this.userCache);
       const userId = userRef.id;
       this.userCache.userId = userId;
@@ -296,13 +284,6 @@ export class UserService {
  * Function for adding a user to the database
  * @param user The user object to be added
  */
-  // addUser(user: User) {
-    // addDoc(collection(this.firestore, 'users'), user.toJSON())
-    // .then((data) => {
-    //   this.pushUserId(data.id);
-    // })
-    // .catch((error) => console.error('Fehler beim Hinzufügen des Benutzers:', error));
-  // }
   addUser(user: User): Promise<DocumentReference> {
     return addDoc(collection(this.firestore, 'users'), user.toJSON());
   }
@@ -556,6 +537,4 @@ export class UserService {
   getDeviceWidth(){
     this.deviceWidth = window.innerWidth;
   }
-
-
 }
